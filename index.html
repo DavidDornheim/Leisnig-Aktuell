@@ -52,58 +52,31 @@
   </section>
 
   <script>
-    async function fetchWithCors(url) {
-      try {
-        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-        const data = await res.json();
-        return data.contents;
-      } catch(e) {
-        console.error('Fetch Fehler:', e);
-        return '';
-      }
-    }
+async function loadKulturEvents() {
+  const contents = await fetchWithCors('https://www.kulturbahnhof-leisnig.de/konzerte-veranstaltungen/');
+  if (!contents) return;
+  const doc = new DOMParser().parseFromString(contents, 'text/html');
+  // Suche alle <li> Elemente innerhalb von .veranstaltungen oder #content
+  const listItems = doc.querySelectorAll('li');
+  const events = Array.from(listItems)
+    .map(li => li.textContent.trim())
+    .filter(t => t.length > 10)
+    .slice(0, 6);
+  document.getElementById('events-kultur').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
+}
 
-    async function loadRSS() {
-      const contents = await fetchWithCors('https://www.mdr.de/nachrichten/sachsen/index-rss.xml');
-      if (!contents) return;
-      const doc = new DOMParser().parseFromString(contents, 'text/xml');
-      const items = doc.querySelectorAll('item');
-      const html = Array.from(items).slice(0,6).map(item => `
-        <div class="card">
-          <a href="${item.querySelector('link').textContent}" target="_blank">
-            ${item.querySelector('title').textContent}
-          </a>
-        </div>
-      `).join('');
-      document.getElementById('news').innerHTML = html;
-    }
-
-    async function loadKulturEvents() {
-      const contents = await fetchWithCors('https://www.kulturbahnhof-leisnig.de/konzerte-veranstaltungen/');
-      if (!contents) return;
-      const doc = new DOMParser().parseFromString(contents, 'text/html');
-      const paras = Array.from(doc.querySelectorAll('#content p, .entry-content p'));
-      const events = paras.map(p => p.textContent.trim()).filter(t => t.length > 10 && /[0-9]{1,2}\./.test(t)).slice(0,6);
-      document.getElementById('events-kultur').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
-    }
-
-    async function loadStadtEvents() {
-      const contents = await fetchWithCors('https://www.leisnig.de/veranstaltungen');
-      if (!contents) return;
-      const doc = new DOMParser().parseFromString(contents, 'text/html');
-      const elems = doc.querySelectorAll('h2, h3');
-      const events = [];
-      let currentDate = '';
-      elems.forEach(el => {
-        if (el.tagName === 'H2') currentDate = el.textContent.trim();
-        else if (el.tagName === 'H3' && currentDate) events.push(`${currentDate} — ${el.textContent.trim()}`);
-      });
-      document.getElementById('events-stadt').innerHTML = events.slice(0,6).map(t => `<div class="card">${t}</div>`).join('');
-    }
-
-    loadRSS();
-    loadKulturEvents();
-    loadStadtEvents();
-  </script>
+async function loadStadtEvents() {
+  const contents = await fetchWithCors('https://www.leisnig.de/veranstaltungen');
+  if (!contents) return;
+  const doc = new DOMParser().parseFromString(contents, 'text/html');
+  // Suche alle Einträge in Event-Listen
+  const events = Array.from(doc.querySelectorAll('.event-list li, .veranstaltung-list li'))
+    .map(li => li.textContent.trim())
+    .filter(t => t.length > 10)
+    .slice(0, 6);
+  document.getElementById('events-stadt').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
+}
+</script>
 </body>
 </html>
+
