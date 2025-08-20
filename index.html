@@ -11,16 +11,8 @@
     h2 { color: #4b0082; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
     .card { background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-    .images img { width: 100%; border-radius: 10px; margin-bottom: 1rem; }
+    .images img { width: 100%; border-radius: 10px; margin-bottom: 1rem; object-fit: cover; display: block; }
   </style>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'UA-XXXXXXXXX-X');
-  </script>
 </head>
 <body>
   <header>
@@ -29,11 +21,7 @@
 
   <section class="images">
     <h2>Bilder aus Leisnig</h2>
-    <div class="grid">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Burg_Mildenstein_in_Leisnig.jpg" alt="Burg Mildenstein">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/c/c0/Marktplatz_Leisnig.jpg" alt="Marktplatz Leisnig">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Stadtansicht_Leisnig.jpg" alt="Stadtansicht Leisnig">
-    </div>
+    <div class="grid" id="image-gallery">Lade Bilder...</div>
   </section>
 
   <section>
@@ -52,6 +40,18 @@
   </section>
 
   <script>
+    const images = [
+      {src: 'https://de.wikipedia.org/wiki/Leisnig#/media/Datei:Leisnig_und_Burg_Mildenstein.jpg', alt: 'Burg Mildenstein'},
+      {src: 'https://de.wikipedia.org/wiki/Leisnig#/media/Datei:Lei%C3%9Fnigk_(Merian).jpg', alt: 'Altes Leisnig'},
+      {src: 'https://de.wikipedia.org/wiki/Leisnig#/media/Datei:Leising_-_Rathaus_(02-2).jpg', alt: 'Rathaus Leisnig'},
+      {src: 'https://de.wikipedia.org/wiki/Leisnig#/media/Datei:Leisnig,_st-matth%C3%A4i_church_-_de.jpg', alt: 'Kirche Leisnig'}
+    ];
+
+    function loadImages() {
+      const gallery = document.getElementById('image-gallery');
+      gallery.innerHTML = images.map(img => `<div class="card"><img src="${img.src}" alt="${img.alt}"></div>`).join('');
+    }
+
     async function fetchWithCors(url) {
       try {
         const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
@@ -92,7 +92,6 @@
       if (!contents) return;
       const doc = new DOMParser().parseFromString(contents, 'text/html');
       let events = [];
-      // Suche nach allen Artikeln oder bekannten Event-Containern
       const articles = doc.querySelectorAll('article, .veranstaltung');
       if (articles.length > 0) {
         articles.forEach(a => {
@@ -101,7 +100,6 @@
           if(title) events.push(`${date} — ${title}`);
         });
       } else {
-        // Fallback: Suche nach allen H2/H3 als Text
         const elems = doc.querySelectorAll('h2, h3');
         let currentDate = '';
         elems.forEach(el => {
@@ -113,6 +111,7 @@
       document.getElementById('events-stadt').innerHTML = events.slice(0,6).map(t => `<div class="card">${t}</div>`).join('');
     }
 
+    loadImages();
     loadRSS();
     loadKulturEvents();
     loadStadtEvents();
