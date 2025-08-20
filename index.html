@@ -78,14 +78,26 @@
       document.getElementById('news').innerHTML = html;
     }
 
-    async function loadKulturEvents() {
-      const contents = await fetchWithCors('https://www.kulturbahnhof-leisnig.de/konzerte-veranstaltungen/');
-      if (!contents) return;
-      const doc = new DOMParser().parseFromString(contents, 'text/html');
-      const paras = Array.from(doc.querySelectorAll('#content p, .entry-content p'));
-      const events = paras.map(p => p.textContent.trim()).filter(t => t.length > 10 && /[0-9]{1,2}\./.test(t)).slice(0,6);
-      document.getElementById('events-kultur').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
-    }
+   async function loadKulturEvents() {
+  const contents = await fetchWithCors('https://bahnhof-leisnig.de/konzerte-veranstaltungen/');
+  if (!contents) return;
+  const doc = new DOMParser().parseFromString(contents, 'text/html');
+  
+  // Alle Veranstaltungstitel und Daten erfassen
+  const eventElems = doc.querySelectorAll('.tribe-events-calendar-list__event-title, .tribe-events-list-event-title, .tribe-events-event-title, h3, h4');
+  const dateElems = doc.querySelectorAll('.tribe-event-date-start, .tribe-events-event-date-start, time');
+
+  let events = [];
+  for(let i = 0; i < eventElems.length; i++){
+    const title = eventElems[i]?.textContent.trim();
+    const date = dateElems[i]?.textContent.trim() || '';
+    if(title) events.push(`${date} — ${title}`);
+  }
+
+  if(events.length === 0) events.push('Keine Veranstaltungen gefunden oder Webseite lädt dynamisch.');
+  
+  document.getElementById('events-kultur').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
+}
 
     async function loadStadtEvents() {
       const contents = await fetchWithCors('https://www.leisnig.de/veranstaltungen');
@@ -118,5 +130,6 @@
   </script>
 </body>
 </html>
+
 
 
