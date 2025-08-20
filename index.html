@@ -39,6 +39,15 @@
     <div id="events-stadt" class="grid">Lade Veranstaltungen...</div>
   </section>
 
+  <section>
+    <h2>Veranstaltungen – Kulturbahnhof Leisnig</h2>
+    <iframe 
+    src="https://bahnhof-leisnig.de/konzerte-veranstaltungen/" 
+    style="width: 100%; height: 1000px; border: none;" 
+    title="Kulturbahnhof Veranstaltungen">
+    </iframe>
+  </section>
+  
   <script>
     const images = [
       {src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Leisnig_und_Burg_Mildenstein.jpg/330px-Leisnig_und_Burg_Mildenstein.jpg', alt: 'Burg Mildenstein'},
@@ -83,14 +92,7 @@
   if (!contents) return;
   const doc = new DOMParser().parseFromString(contents, 'text/html');
 
-<section>
-  <h2>Veranstaltungen – Kulturbahnhof Leisnig</h2>
-  <iframe 
-    src="https://bahnhof-leisnig.de/konzerte-veranstaltungen/" 
-    style="width: 100%; height: 1000px; border: none;" 
-    title="Kulturbahnhof Veranstaltungen">
-  </iframe>
-</section>
+
   
   // Alle Veranstaltungstitel und Daten erfassen
   const eventElems = doc.querySelectorAll('.tribe-events-calendar-list__event-title, .tribe-events-list-event-title, .tribe-events-event-title, h3, h4');
@@ -139,6 +141,7 @@
   </script>
 </body>
 </html>
+
 
 
 
