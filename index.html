@@ -5,41 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leisnig Aktuell</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #4b0082;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-    section {
-      padding: 1rem;
-    }
-    h2 {
-      color: #4b0082;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-    .card {
-      background: white;
-      padding: 1rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .images img {
-      width: 100%;
-      border-radius: 10px;
-      margin-bottom: 1rem;
-    }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    header { background: #4b0082; color: white; padding: 1rem; text-align: center; }
+    section { padding: 1rem; }
+    h2 { color: #4b0082; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .card { background: white; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .images img { width: 100%; border-radius: 10px; margin-bottom: 1rem; }
   </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-XXXXXXXXX-X');
+  </script>
 </head>
 <body>
   <header>
@@ -57,71 +38,69 @@
 
   <section>
     <h2>Aktuelle Nachrichten (MDR Sachsen)</h2>
-    <div id="news" class="grid"></div>
+    <div id="news" class="grid">Lade News...</div>
   </section>
 
   <section>
     <h2>Veranstaltungen – Kulturbahnhof</h2>
-    <div id="events-kultur" class="grid"></div>
+    <div id="events-kultur" class="grid">Lade Veranstaltungen...</div>
   </section>
 
   <section>
     <h2>Veranstaltungen – Stadt Leisnig</h2>
-    <div id="events-stadt" class="grid"></div>
+    <div id="events-stadt" class="grid">Lade Veranstaltungen...</div>
   </section>
 
   <script>
-    // ---- RSS News (MDR Sachsen) ----
+    async function fetchWithCors(url) {
+      try {
+        const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+        return data.contents;
+      } catch(e) {
+        console.error('Fetch Fehler:', e);
+        return '';
+      }
+    }
+
     async function loadRSS() {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.mdr.de/nachrichten/sachsen/index-rss.xml')}`);
-      const data = await res.json();
-      const doc = new DOMParser().parseFromString(data.contents, 'text/xml');
+      const contents = await fetchWithCors('https://www.mdr.de/nachrichten/sachsen/index-rss.xml');
+      if (!contents) return;
+      const doc = new DOMParser().parseFromString(contents, 'text/xml');
       const items = doc.querySelectorAll('item');
-      let html = '';
-      items.forEach((item, i) => {
-        if (i < 6) {
-          html += `<div class="card">
-            <a href="${item.querySelector('link').textContent}" target="_blank">
-              ${item.querySelector('title').textContent}
-            </a>
-          </div>`;
-        }
-      });
+      const html = Array.from(items).slice(0,6).map(item => `
+        <div class="card">
+          <a href="${item.querySelector('link').textContent}" target="_blank">
+            ${item.querySelector('title').textContent}
+          </a>
+        </div>
+      `).join('');
       document.getElementById('news').innerHTML = html;
     }
 
-    // ---- Kulturbahnhof Leisnig Events ----
     async function loadKulturEvents() {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.kulturbahnhof-leisnig.de/konzerte-veranstaltungen/')}`);
-      const data = await res.json();
-      const doc = new DOMParser().parseFromString(data.contents, 'text/html');
+      const contents = await fetchWithCors('https://www.kulturbahnhof-leisnig.de/konzerte-veranstaltungen/');
+      if (!contents) return;
+      const doc = new DOMParser().parseFromString(contents, 'text/html');
       const paras = Array.from(doc.querySelectorAll('#content p, .entry-content p'));
-      const events = paras
-        .map(p => p.textContent.trim())
-        .filter(t => t.length > 10 && /[0-9]{1,2}\./.test(t))
-        .slice(0, 6);
+      const events = paras.map(p => p.textContent.trim()).filter(t => t.length > 10 && /[0-9]{1,2}\./.test(t)).slice(0,6);
       document.getElementById('events-kultur').innerHTML = events.map(ev => `<div class="card">${ev}</div>`).join('');
     }
 
-    // ---- Stadt Leisnig Events ----
     async function loadStadtEvents() {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.leisnig.de/veranstaltungen')}`);
-      const data = await res.json();
-      const doc = new DOMParser().parseFromString(data.contents, 'text/html');
+      const contents = await fetchWithCors('https://www.leisnig.de/veranstaltungen');
+      if (!contents) return;
+      const doc = new DOMParser().parseFromString(contents, 'text/html');
       const elems = doc.querySelectorAll('h2, h3');
       const events = [];
       let currentDate = '';
       elems.forEach(el => {
-        if (el.tagName === 'H2') {
-          currentDate = el.textContent.trim();
-        } else if (el.tagName === 'H3' && currentDate) {
-          events.push(`${currentDate} — ${el.textContent.trim()}`);
-        }
+        if (el.tagName === 'H2') currentDate = el.textContent.trim();
+        else if (el.tagName === 'H3' && currentDate) events.push(`${currentDate} — ${el.textContent.trim()}`);
       });
-      document.getElementById('events-stadt').innerHTML = events.slice(0, 6).map(t => `<div class="card">${t}</div>`).join('');
+      document.getElementById('events-stadt').innerHTML = events.slice(0,6).map(t => `<div class="card">${t}</div>`).join('');
     }
 
-    // ---- Alles laden ----
     loadRSS();
     loadKulturEvents();
     loadStadtEvents();
